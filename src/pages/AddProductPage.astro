@@ -1,0 +1,98 @@
+---
+import { useState, useEffect } from 'react';
+
+interface Product {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  imageUrl?: string;
+}
+
+const [name, setName] = useState<string>('');
+const [description, setDescription] = useState<string>('');
+const [price, setPrice] = useState<string>('');
+const [category, setCategory] = useState<string>('');
+const [imageUrl, setImageUrl] = useState<string>('');
+const [message, setMessage] = useState<string>('');
+
+const checkAuthentication = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    setMessage('Debes estar logueado para publicar un producto');
+    window.location.href = '/login';
+  }
+};
+
+useEffect(checkAuthentication, []);
+
+const handleAddProduct = async (e: Event) => {
+  e.preventDefault();
+
+  if (!name || !description || !price || !category) {
+    setMessage('Por favor, completa todos los campos obligatorios.');
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    setMessage('Debes iniciar sesión para agregar un producto.');
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:5000/api/products/add-product', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name, description, price, category, imageUrl }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setMessage('Producto publicado con éxito');
+      window.location.href = '/';
+    } else {
+      const error = await res.json().catch(() => ({ message: 'Error desconocido' }));
+      setMessage(`Error: ${error.message || 'Error al agregar el producto'}`);
+      console.error(error);
+    }
+  } catch (error) {
+    setMessage('Error en la conexión');
+  }
+};
+---
+
+<style>
+  /* Tus estilos aquí */
+</style>
+
+<div class="container">
+  <h2>Agregar Producto</h2>
+  {message && <p>{message}</p>}
+  <form on:submit={handleAddProduct}>
+    <div class="form-group">
+      <label for="name">Nombre</label>
+      <input type="text" id="name" value={name} on:input={(e) => setName(e.target.value)} placeholder="Nombre del producto" required />
+    </div>
+    <div class="form-group">
+      <label for="description">Descripción</label>
+      <textarea id="description" value={description} on:input={(e) => setDescription(e.target.value)} placeholder="Descripción del producto" required></textarea>
+    </div>
+    <div class="form-group">
+      <label for="price">Precio</label>
+      <input type="number" id="price" value={price} on:input={(e) => setPrice(e.target.value)} placeholder="Precio del producto" required />
+    </div>
+    <div class="form-group">
+      <label for="category">Categoría</label>
+      <input type="text" id="category" value={category} on:input={(e) => setCategory(e.target.value)} placeholder="Categoría del producto" required />
+    </div>
+    <div class="form-group">
+      <label for="imageUrl">URL de la Imagen</label>
+      <input type="text" id="imageUrl" value={imageUrl} on:input={(e) => setImageUrl(e.target.value)} placeholder="URL de la imagen del producto (opcional)" />
+    </div>
+    <button type="submit">Publicar Producto</button>
+  </form>
+</div>

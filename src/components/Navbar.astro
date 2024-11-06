@@ -1,0 +1,35 @@
+---
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
+
+// Estado para verificar si el usuario está autenticado
+const isAuthenticated = !!localStorage.getItem('token');
+
+// Manejo de la redirección al hacer clic en el icono de usuario
+const handleUserClick = () => {
+  if (isAuthenticated) {
+    window.location.href = '/profile'; // Redirige al perfil si está autenticado
+  } else {
+    window.location.href = '/login'; // Redirige a login si no está autenticado
+  }
+};
+---
+
+<style>
+  /* Incluye el contenido de navBar.css aquí o importa el archivo en el encabezado */
+</style>
+
+<nav class="navbar">
+  <div class="nameLogo">Fuxion</div>
+  <div class="search-bar">
+    <input type="text" placeholder="Buscar productos" />
+  </div>
+  <div class="links">
+    <a href="/">Inicio</a>
+    <a href="/products">Productos</a>
+    <a href="/about">Acerca de</a>
+    <button onClick={handleUserClick} class="user-icon-button" style="background: none; border: none; cursor: pointer; padding:0; margin:0;">
+      <FontAwesomeIcon icon={faUser} />
+    </button>
+  </div>
+</nav>

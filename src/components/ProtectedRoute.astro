@@ -1,0 +1,18 @@
+---
+interface ProtectedRouteProps {
+  children?: any;
+}
+
+// Props en Astro
+const { children }: ProtectedRouteProps = Astro.props;
+
+// Comprobar el token
+const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+// Redirección si no hay token
+if (!token) {
+  window.location.href = '/login';
+}
+---
+
+{children} <!-- Muestra el contenido protegido si hay token -->
