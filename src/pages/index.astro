@@ -1,12 +1,42 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Card from '../components/Card.astro';
+import react from '@astrojs/react';
+import { useEffect, useState } from 'react'; // Importamos los hooks de React
+import Navbar from '../components/Navbar.astro';  // Importa el componente de React de Navbar
+import ProductCard from '../components/ProductCard.astro';  // Importa el componente de React de ProductCard
+
+const [products, setProducts] = useState([]); // Estado para almacenar los productos
+
+useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/products");
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data); // Guardamos los productos en el estado
+      } else {
+        console.error("Failed to fetch products");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  fetchProducts();
+}, []);
 ---
 
-<Layout title="Welcome to Astro.">
-	<main>
-		<h1 class="text-center text-7xl font-extrabold">Fuxion 🚀 <span class="block"> Next</span>
-			
-		</h1>
-	</main>
-</Layout>
+<div>
+  <!-- Componente Navbar renderizado en Astro -->
+  <Navbar />
+
+  <div class="home-page container">
+    <h1>Bienvenido a Fuxion</h1>
+
+    <!-- Renderizar lista de productos -->
+    <div class="product-list">
+      {products.map((product) => (
+        <ProductCard key={product.id} product={product} />  <!-- Renderizar cada producto -->
+      ))}
+    </div>
+  </div>
+</div>

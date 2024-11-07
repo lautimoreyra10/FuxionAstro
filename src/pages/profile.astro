@@ -1,0 +1,239 @@
+---
+import { useState, useEffect } from 'react'; // Importar los hooks para usarlos en la página
+import { navigate } from "astro:transitions/client";
+import Resizer from 'react-image-file-resizer';
+
+const [imageFile, setImageFile] = useState(null);
+const [userData, setUserData] = useState({
+  firstName: '',
+  lastName: '',
+  email: '',
+  address: '',
+  document: '',
+  card: '',
+  imageUrl: '',
+  role: '',
+});
+const [loading, setLoading] = useState(true);
+const [message, setMessage] = useState('');
+const [redirect, setRedirect] = useState(false);
+
+useEffect(() => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    navigate('/login');
+    return;
+  }
+
+  fetch("http://localhost:5000/api/users/profile", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Token inválido o expirado');
+      }
+      return res.json();
+    })
+    .then((data) => {
+      setUserData(data);
+      setLoading(false);
+    })
+    .catch((err) => {
+      console.error(err);
+      localStorage.removeItem('token');
+      navigate('/login');
+    });
+}, []);
+
+const handleImageUpload = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (validImageTypes.includes(file.type)) {
+      Resizer.imageFileResizer(
+        file,
+        300,
+        300,
+        'JPEG',
+        100,
+        0,
+        (uri) => {
+          setImageFile(uri);
+          setMessage('');
+        },
+        'blob'
+      );
+    } else {
+      setMessage('El archivo no es una imagen válida');
+      setImageFile(null);
+    }
+  }
+};
+
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
+  setUserData({
+    ...userData,
+    [name]: value,
+  });
+};
+
+const handleFormSubmit = async (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem('token');
+  const formData = new FormData();
+  formData.append('firstName', userData.firstName);
+  formData.append('lastName', userData.lastName);
+  formData.append('address', userData.address);
+  formData.append('document', userData.document);
+  formData.append('card', userData.card);
+  if (imageFile) {
+    formData.append('image', imageFile);
+  }
+
+  try {
+    const res = await fetch("http://localhost:5000/api/users/profile", {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (res.ok) {
+      const updatedData = await res.json();
+      setUserData(updatedData);
+      setMessage("Perfil actualizado con éxito");
+
+      setRedirect(true);
+      setTimeout(() => {
+        navigate('/add-product');
+      }, 5000);
+    } else {
+      const error = await res.text();
+      setMessage(`Error al actualizar el perfil: ${error}`);
+    }
+  } catch (error) {
+    setMessage('Error en la conexión');
+  }
+};
+
+if (loading) {
+  return <div>Cargando Perfil...</div>;
+}
+---
+
+<div class="profile-container">
+  <h1>Perfil del Usuario</h1>
+  <form class="profile-form" onsubmit={handleFormSubmit}>
+    <div class="form-group">
+      <label>Nombre</label>
+      <input
+        type="text"
+        name="firstName"
+        value={userData.firstName}
+        onInput={handleInputChange}
+        placeholder="Nombre"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Apellido</label>
+      <input
+        type="text"
+        name="lastName"
+        value={userData.lastName}
+        onInput={handleInputChange}
+        placeholder="Apellido"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Correo Electrónico</label>
+      <input
+        type="email"
+        name="email"
+        value={userData.email}
+        placeholder="Correo Electrónico"
+        class="form-input"
+        disabled
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Dirección</label>
+      <input
+        type="text"
+        name="address"
+        value={userData.address}
+        onInput={handleInputChange}
+        placeholder="Dirección"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Documento</label>
+      <input
+        type="text"
+        name="document"
+        value={userData.document}
+        onInput={handleInputChange}
+        placeholder="Documento de Identidad"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Tarjeta</label>
+      <input
+        type="text"
+        name="card"
+        value={userData.card}
+        onInput={handleInputChange}
+        placeholder="Número de Tarjeta"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>URL de la Imagen de Perfil</label>
+      <input
+        type="text"
+        name="imageUrl"
+        value={userData.imageUrl}
+        onInput={handleInputChange}
+        placeholder="URL de Imagen de Perfil"
+        class="form-input"
+      />
+      {userData.imageUrl && (
+        <img
+          src={userData.imageUrl}
+          alt="Foto de Perfil"
+          class="profile-image"
+        />
+      )}
+    </div>
+
+    <div class="form-group">
+      <label>Subir imagen de perfil</label>
+      <input type="file" accept="image/*" onChange={handleImageUpload} />
+    </div>
+
+    <button type="submit" class="save-button">
+      Guardar Cambios
+    </button>
+  </form>
+
+  {message && <p class="message">{message}</p>}
+  {redirect && <p>Redirigiendo a la página principal en 5 segundos...</p>}
+</div>
+
+<style>
+  @import '/src/styles/profile.css';
+</style>

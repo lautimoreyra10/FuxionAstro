@@ -1,0 +1,63 @@
+---
+// Importa `useState` y `useNavigate` de React
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// Configura el estado para `email`, `password`, y `message`
+const [email, setEmail] = useState('');
+const [password, setPassword] = useState('');
+const [message, setMessage] = useState('');
+const navigate = useNavigate();
+
+// Función de manejo de login
+const handleLogin = async () => {
+  try {
+    const res = await fetch('http://localhost:5000/api/users/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      setMessage('Login exitoso');
+      navigate('/');
+    } else {
+      const error = await res.text();
+      setMessage(`Error: ${error}`);
+    }
+  } catch (error) {
+    setMessage('Error en la conexión');
+  }
+};
+---
+
+<div class="container">
+  <h1>Iniciar sesión</h1>
+  <form onSubmit={(e) => {
+    e.preventDefault();
+    handleLogin();
+  }}>
+    <input
+      type="text"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      placeholder="Correo electrónico"
+      required
+    />
+    <input
+      type="password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      placeholder="Contraseña"
+      required
+    />
+    <button type="submit">Iniciar sesión</button>
+  </form>
+  {message && <p>{message}</p>}
+</div>
+
+<style>
+  @import '/src/styles/login.css';
+</style>
